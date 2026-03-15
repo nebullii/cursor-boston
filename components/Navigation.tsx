@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Avatar from "@/components/Avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -9,16 +10,29 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const rafRef = useRef<number>(0);
+
+  // Close mobile menu on route change (handles browser back/forward too)
+  useEffect(() => {
+    rafRef.current = requestAnimationFrame(() => setMobileMenuOpen(false));
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [pathname]);
+
+  // Shared active/inactive class logic — mobile adds py-3 text-base, desktop adds text-sm whitespace-nowrap
+  // /login intentionally highlights when on the login page for consistency with other nav links
+  const buildNavClass = (href: string, mobile = false) =>
+    `${pathname === href ? "text-foreground font-semibold" : "text-neutral-600 dark:text-neutral-300 font-medium"} hover:text-black dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline ${mobile ? "py-3 text-base" : "text-sm whitespace-nowrap"}`;
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="w-full px-4 md:px-6 h-16 flex items-center">
         {/* Logo: 44px min touch target (WCAG 2.1) */}
         <Link
           href="/"
-          className="flex items-center gap-2 flex-shrink-0 min-h-[44px] min-w-[44px] py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+          className="flex items-center gap-2 shrink-0 min-h-[44px] min-w-[44px] py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
         >
-          <div className="w-8 h-8 bg-neutral-100 dark:bg-black border border-neutral-200 dark:border-neutral-700 rounded-md flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 bg-neutral-100 dark:bg-black border border-neutral-200 dark:border-neutral-700 rounded-md flex items-center justify-center shrink-0">
             <svg
               width="18"
               height="18"
@@ -40,38 +54,22 @@ export default function Navigation() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center space-x-8 ml-12">
-          <Link href="/events" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Events
-          </Link>
-          <Link href="/talks" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Talks
-          </Link>
-          <Link href="/hackathons" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Hackathons
-          </Link>
-          <Link href="/blog" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Blog
-          </Link>
-          <Link href="/members" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Members
-          </Link>
-          <Link href="/opportunities" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Opportunities
-          </Link>
-          <Link href="/showcase" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            Showcase
-          </Link>
-          <Link href="/about" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-            About
-          </Link>
+        <nav aria-label="Main" className="hidden xl:flex items-center gap-6 ml-8 flex-1 min-w-0">
+          <Link href="/events" className={buildNavClass("/events")}>Events</Link>
+          <Link href="/map" className={buildNavClass("/map")}>Map</Link>
+          <Link href="/talks" className={buildNavClass("/talks")}>Talks</Link>
+          <Link href="/hackathons" className={buildNavClass("/hackathons")}>Hackathons</Link>
+          <Link href="/blog" className={buildNavClass("/blog")}>Blog</Link>
+          <Link href="/members" className={buildNavClass("/members")}>Members</Link>
+          <Link href="/opportunities" className={buildNavClass("/opportunities")}>Opportunities</Link>
+          <Link href="/showcase" className={buildNavClass("/showcase")}>Showcase</Link>
+          <Link href="/pair" className={buildNavClass("/pair")}>Pair Programming</Link>
+          <Link href="/analytics" className={buildNavClass("/analytics")}>Analytics</Link>
+          <Link href="/about" className={buildNavClass("/about")}>About</Link>
         </nav>
 
-        {/* Spacer */}
-        <div className="hidden lg:block flex-1" />
-
         {/* Desktop Auth */}
-        <div className="hidden lg:flex items-center flex-shrink-0 gap-4">
+        <div className="hidden xl:flex items-center shrink-0 gap-4 pl-6">
           <ThemeToggle />
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-800 animate-pulse" />
@@ -89,7 +87,7 @@ export default function Navigation() {
             </Link>
           ) : (
             <div className="flex items-center">
-              <Link href="/login" className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white text-sm font-medium mr-6 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
+              <Link href="/login" className={`${buildNavClass("/login")} mr-6`}>
                 Sign In
               </Link>
               <Link
@@ -103,11 +101,11 @@ export default function Navigation() {
         </div>
 
         {/* Mobile menu button */}
-        <div className="flex items-center gap-4 lg:hidden">
+        <div className="ml-auto flex items-center gap-4 xl:hidden">
           <ThemeToggle />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white p-2 flex-shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+            className="text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white p-2 shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
@@ -127,33 +125,21 @@ export default function Navigation() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div id="mobile-menu" className="lg:hidden border-t border-neutral-200 dark:border-neutral-800 bg-background">
-          <div className="max-w-6xl mx-auto px-6 py-4">
-            <nav className="flex flex-col space-y-1">
-              <Link href="/events" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Events
-              </Link>
-              <Link href="/talks" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Talks
-              </Link>
-              <Link href="/hackathons" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Hackathons
-              </Link>
-              <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Blog
-              </Link>
-              <Link href="/members" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Members
-              </Link>
-              <Link href="/opportunities" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Opportunities
-              </Link>
-              <Link href="/showcase" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                Showcase
-              </Link>
-              <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white py-3 text-base font-medium transition-colors focus-visible:outline-none focus-visible:text-foreground focus-visible:underline">
-                About
-              </Link>
+        <div id="mobile-menu" className="xl:hidden border-t border-neutral-200 dark:border-neutral-800 bg-background">
+          <div className="w-full px-4 md:px-6 py-4">
+            {/* Menu closes via the pathname useEffect — onClick handlers not needed on nav links */}
+            <nav aria-label="Mobile" className="flex flex-col space-y-1">
+              <Link href="/events" className={buildNavClass("/events", true)}>Events</Link>
+              <Link href="/map" className={buildNavClass("/map", true)}>Map</Link>
+              <Link href="/talks" className={buildNavClass("/talks", true)}>Talks</Link>
+              <Link href="/hackathons" className={buildNavClass("/hackathons", true)}>Hackathons</Link>
+              <Link href="/blog" className={buildNavClass("/blog", true)}>Blog</Link>
+              <Link href="/members" className={buildNavClass("/members", true)}>Members</Link>
+              <Link href="/opportunities" className={buildNavClass("/opportunities", true)}>Opportunities</Link>
+              <Link href="/showcase" className={buildNavClass("/showcase", true)}>Showcase</Link>
+              <Link href="/pair" className={buildNavClass("/pair", true)}>Pair Programming</Link>
+              <Link href="/analytics" className={buildNavClass("/analytics", true)}>Analytics</Link>
+              <Link href="/about" className={buildNavClass("/about", true)}>About</Link>
             </nav>
 
             <div className="border-t border-neutral-200 dark:border-neutral-800 mt-4 pt-4">
